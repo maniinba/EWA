@@ -23,6 +23,7 @@ from io import BytesIO
 
 W = "{http://schemas.microsoft.com/office/word/2003/wordml}"
 V = "{urn:schemas-microsoft-com:vml}"
+AML = "{http://schemas.microsoft.com/aml/2001/core}"
 
 
 def is_wordml(data: bytes) -> bool:
@@ -193,15 +194,16 @@ def parse_wordml(data: bytes):
             color_cache[src] = _classify_gif(blob) if blob else None
         return color_cache[src]
 
-    # Full paragraph list (for detail lookup / SAP notes / metadata fallback).
-    all_paras = [txt for _kind, txt in _iter_all_paras(root)]
+    # Paragraph list in document order + a map of bookmark name -> paragraph
+    # index, used to follow each finding's hyperlink to its detail section.
+    all_paras, bookmark_index = _build_para_index(root)
 
-    result = ParsedReport(raw_text="\n".join(all_paras))
+    result = ParsedReport(raw_text="\n".join(p for p in all_paras if p))
 
     # The Alert Overview / Check Overview tables can be nested inside layout
     # tables, so scan every table and pick the best-matching candidate rather
     # than relying on document position.
-    alerts: list[ParsedAlert] = []
+    alerts_with_bm: list[tuple] = []
     ratings: list[ParsedRating] = []
     best_alert_rows = 0
     best_rating_rows = 0
@@ -219,28 +221,131 @@ def parse_wordml(data: bytes):
         row_hits = _alert_row_count(tbl)
         if row_hits >= 3 and row_hits > best_alert_rows:
             best_alert_rows = row_hits
-            alerts = _parse_alert_table(tbl, color_of)
+            alerts_with_bm = _parse_alert_table(tbl, color_of)
+
+    # Follow each finding's bookmark to its detail section and attach the
+    # recommendation text + SAP Notes ("what needs to be implemented").
+    _attach_details(alerts_with_bm, all_paras, bookmark_index)
 
     # De-duplicate ratings by chapter (keep worst).
     result.ratings = _dedupe_ratings(ratings)
-    result.alerts = alerts
+    result.alerts = [alert for alert, _bm in alerts_with_bm]
 
     # Metadata best-effort from the cover table (filename fallback added later).
     result.system_type = _detect_system_type(all_paras)
     return result
 
 
-def _iter_all_paras(root):
-    for p in root.iter(W + "p"):
-        txt = _para_text(p)
-        if txt:
-            yield ("p", txt)
+def _build_para_index(root):
+    """Return (paragraphs, bookmark->index) in document order.
+
+    Each Word bookmark start is mapped to the index of the paragraph that
+    begins its section, so a finding's hyperlink target resolves to where its
+    detailed description and recommendation start.
+    """
+    paras: list[str] = []
+    bookmarks: dict[str, int] = {}
+
+    def walk(el):
+        tag = el.tag
+        if tag == W + "p":
+            idx = len(paras)
+            for ann in el.iter(AML + "annotation"):
+                if ann.get(W + "type") == "Word.Bookmark.Start":
+                    name = ann.get(W + "name")
+                    if name:
+                        bookmarks.setdefault(name, idx)
+            paras.append(_para_text(el))
+            return
+        if tag == AML + "annotation" and el.get(W + "type") == "Word.Bookmark.Start":
+            name = el.get(W + "name")
+            if name:
+                bookmarks.setdefault(name, len(paras))
+        for child in el:
+            walk(child)
+
+    walk(root)
+    return paras, bookmarks
+
+
+# Table-header / boilerplate lines that are noise when read as prose.
+_NOISE_LINES = {
+    "rating", "section", "key", "current value", "recommended value", "comment",
+    "file name", "parameter", "value", "status", "check", "topic", "subtopic",
+    "statement string", "statement hash", "name", "description", "details",
+}
+
+_REC_RE = re.compile(r"^\s*Recommendation\b[:\-\s]*(.*)", re.IGNORECASE)
+_NOTE_RE = re.compile(r"SAP\s*Note[s]?\s*[:#]?\s*(\d{6,8})", re.IGNORECASE)
+
+
+def _attach_details(alerts_with_bm, paras, bookmarks) -> None:
+    """Populate description / recommendation / SAP notes for each finding from
+    its linked detail section."""
+    # Section boundaries: a finding's section ends at the next finding's start.
+    starts = sorted(
+        i for _a, bm in alerts_with_bm if bm and (i := bookmarks.get(bm)) is not None
+    )
+
+    def section_end(i: int) -> int:
+        nxt = next((j for j in starts if j > i), len(paras))
+        return min(nxt, i + 90)
+
+    for alert, bm in alerts_with_bm:
+        idx = bookmarks.get(bm) if bm else None
+        if idx is None:
+            continue
+        window = [p.strip() for p in paras[idx : section_end(idx)]]
+
+        # Recommendation: the first "Recommendation:" paragraph in the section.
+        recommendation = None
+        for k, para in enumerate(window):
+            m = _REC_RE.match(para)
+            if not m:
+                continue
+            rec = m.group(1).strip()
+            # Append a continuation line if the sentence clearly runs on.
+            for cont in window[k + 1 : k + 2]:
+                cl = cont.strip()
+                if (
+                    cl
+                    and cl.lower() not in _NOISE_LINES
+                    and not _REC_RE.match(cl)
+                    and (rec.endswith((",", ":", "-")) or cl[:1].islower())
+                ):
+                    rec = f"{rec} {cl}".strip()
+            recommendation = rec[:900] or None
+            break
+
+        # Description: the detail section heading, when it adds context beyond
+        # the finding title (skip pure table-header noise).
+        heading = window[0] if window else ""
+        if (
+            heading
+            and heading.lower() not in _NOISE_LINES
+            and heading.lower() != alert.title.lower()
+            and heading[:40].lower() not in alert.title.lower()
+        ):
+            alert.description = heading[:400]
+
+        # SAP Notes explicitly referenced in the section.
+        notes = sorted(set(_NOTE_RE.findall(" ".join(window))))
+
+        if recommendation:
+            alert.recommendation = recommendation
+        if notes:
+            alert.sap_note_refs = notes
 
 
 _SEV_MAP = {"red": "red", "yellow": "yellow", "green": "green", "gray": "gray"}
 
 
 def _parse_alert_table(tbl, color_of):
+    """Return a list of (ParsedAlert, bookmark) pairs.
+
+    The bookmark is the hyperlink target of the finding, used later to locate
+    the detailed recommendation section.
+    """
     from app.services.pdf_parser import ParsedAlert
 
     out = []
@@ -257,15 +362,16 @@ def _parse_alert_table(tbl, color_of):
             continue
         seen.add(text)
         sev = color_of(imgs[0]) or "yellow"
-        out.append(
-            ParsedAlert(
-                title=text,
-                severity=_SEV_MAP.get(sev, "yellow"),
-                chapter=_infer_chapter(text),
-                tags=_auto_tags(text),
-                sap_note_refs=[],
-            )
+        hlink = cells[1].find(".//" + W + "hlink")
+        bookmark = hlink.get(W + "bookmark") if hlink is not None else None
+        alert = ParsedAlert(
+            title=text,
+            severity=_SEV_MAP.get(sev, "yellow"),
+            chapter=_infer_chapter(text),
+            tags=_auto_tags(text),
+            sap_note_refs=[],
         )
+        out.append((alert, bookmark))
     return out
 
 

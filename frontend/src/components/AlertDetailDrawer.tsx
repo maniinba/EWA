@@ -138,14 +138,21 @@ export function AlertDetailDrawer({ alertId, onClose, onUpdated, onSelectAlert }
             </section>
           )}
 
-          {alert.recommendation && (
-            <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Recommendation
-              </h3>
-              <p className="whitespace-pre-wrap text-sm text-gray-700">{alert.recommendation}</p>
-            </section>
-          )}
+          <section>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Recommendation — what needs to be implemented
+            </h3>
+            {alert.recommendation ? (
+              <p className="whitespace-pre-wrap rounded-lg border border-brand-100 bg-brand-50/60 p-3 text-sm text-gray-800">
+                {alert.recommendation}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                No specific remediation text was extracted for this finding. See the
+                full EarlyWatch Alert report{alert.sap_note_refs.length > 0 ? ' and the SAP Notes below' : ''} for details.
+              </p>
+            )}
+          </section>
 
           {alert.sap_note_refs.length > 0 && (
             <section>
