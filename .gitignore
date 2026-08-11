@@ -23,3 +23,12 @@ frontend/.vite/
 .vscode/
 .idea/
 .DS_Store
+
+# Real EWA report files (customer data - never commit)
+*.DOC
+*.doc
+/VSP_*
+/VP1_*
+/VEP_*
+/VHP_*
+!backend/sample_data/*

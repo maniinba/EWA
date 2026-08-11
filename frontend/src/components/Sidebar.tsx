@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { to: '/alerts', label: 'Alerts' },
   { to: '/reports', label: 'Reports' },
   { to: '/trends', label: 'Trends' },
-  { to: '/connector', label: 'Connector' },
 ];
 
 interface SidebarProps {

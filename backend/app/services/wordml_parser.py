@@ -101,6 +101,24 @@ def _rows(tbl):
     return tbl.findall(W + "tr")
 
 
+def _first_row_text(tbl) -> str:
+    rows = _rows(tbl)
+    if not rows:
+        return ""
+    return " ".join(_cell_text(tc) for tc in rows[0].findall(W + "tc")).strip()
+
+
+def _is_rating_detail_table(tbl) -> bool:
+    """True for the per-topic 'Rating / Check / Description' detail tables.
+
+    These list individual checks (mostly green/OK) and must NOT be mistaken for
+    the Alert Overview, which contains only the findings that need attention and
+    has no such header row.
+    """
+    hdr = _first_row_text(tbl).lower()
+    return hdr.startswith("rating") and ("check" in hdr or "description" in hdr)
+
+
 def _alert_row_count(tbl) -> int:
     """Count rows shaped like an Alert Overview entry: [icon][text]."""
     hits = 0
@@ -193,6 +211,10 @@ def parse_wordml(data: bytes):
             if len(parsed_ratings) > best_rating_rows:
                 best_rating_rows = len(parsed_ratings)
                 ratings = parsed_ratings
+            continue
+        # Skip per-topic 'Rating/Check' detail tables - only the Alert Overview
+        # (findings needing attention, no check-header) should become alerts.
+        if _is_rating_detail_table(tbl):
             continue
         row_hits = _alert_row_count(tbl)
         if row_hits >= 3 and row_hits > best_alert_rows:

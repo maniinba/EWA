@@ -9,7 +9,6 @@ import { Systems } from './pages/Systems';
 import { Alerts } from './pages/Alerts';
 import { Reports } from './pages/Reports';
 import { Trends } from './pages/Trends';
-import { Connector } from './pages/Connector';
 import { SearchResults } from './pages/SearchResults';
 
 export default function App() {
@@ -33,7 +32,6 @@ export default function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/trends" element={<Trends />} />
             <Route path="/trends/:systemId" element={<Trends />} />
-            <Route path="/connector" element={<Connector />} />
             <Route path="/search" element={<SearchResults />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
