@@ -14,9 +14,13 @@ KPI/rating trends across your whole landscape.
 
 ## Features
 
-- **Multi-system report management** – upload EWA reports (PDF / HTML / text),
-  auto-extract SID, report date, chapter ratings and alerts; per-system report
-  timeline; duplicate detection with explicit replace.
+- **Multi-system report management** – upload EWA reports in SAP's native
+  **`.DOC` (Word 2003 XML)** export format as well as PDF / HTML / text;
+  auto-extract SID, report date, chapter ratings and alerts (including
+  colour-icon severity decoding); per-system report timeline; duplicate
+  detection with explicit replace. Bulk-load a folder with the
+  `python -m app.ingest` CLI, and clear all data from the **Systems → Danger
+  zone** (admin) or `POST /api/admin/purge`.
 - **Recommendations & alerts dashboard** – consolidated cross-system view,
   filter by severity / status / chapter / system / tag, status tracking
   (open → in progress → resolved → deferred) with resolution notes.
@@ -145,8 +149,12 @@ docker-compose.yml
   `download_report` in `app/services/sapforme.py`) are placeholders that must be
   adjusted to your tenant's entitlement; live fetch requires a registered OAuth
   client and an authorized S-User.
-- Parsing is tuned for the labelled/section-marker structure used by typical EWA
-  exports (and the bundled sample generator). Heavily reformatted or
-  image-only PDFs may need OCR and additional patterns.
+- Parsing supports SAP's WordML `.DOC` EWA export (the format downloaded from
+  SAP for Me — Alert Overview findings, Check Overview topic ratings and
+  colour-icon severities are extracted; SID/date/overall rating come from the
+  filename) as well as the labelled/section-marker text/PDF structure used by
+  the bundled sample generator. Legacy binary `.doc` (OLE) and image-only PDFs
+  fall back to filename metadata and may need OCR/additional patterns for full
+  alert extraction.
 - LLM-powered natural-language querying is noted as a future enhancement and is
   not included.

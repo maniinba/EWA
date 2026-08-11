@@ -168,14 +168,16 @@ export function Reports() {
                 browse
               </button>
             </p>
-            <p className="mt-1 text-xs text-gray-400">PDF, HTML, or ZIP EWA report files</p>
+            <p className="mt-1 text-xs text-gray-400">
+              SAP EWA reports — .DOC (Word XML), PDF, HTML or TXT
+            </p>
             {file && <p className="mt-3 text-sm font-medium text-gray-700">{file.name}</p>}
             <input
               ref={inputRef}
               type="file"
               className="hidden"
               onChange={onInputChange}
-              accept=".pdf,.html,.htm,.zip,.xml"
+              accept=".doc,.docx,.pdf,.html,.htm,.txt,.xml"
             />
           </div>
 

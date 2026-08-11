@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createSystem, errorMessage } from '../services/api';
+import { createSystem, errorMessage, purgeData } from '../services/api';
 import { useSystems } from '../hooks/useSystems';
 import { useAuth } from '../hooks/useAuth';
 import { Card } from '../components/Card';
@@ -13,7 +13,34 @@ export function Systems() {
   const { systems, loading, refresh } = useSystems();
   const { hasRole } = useAuth();
   const canCreate = hasRole('operator');
+  const isAdmin = hasRole('admin');
   const navigate = useNavigate();
+
+  const [purging, setPurging] = useState(false);
+  const [purgeMsg, setPurgeMsg] = useState<string | null>(null);
+
+  const onPurge = async () => {
+    if (
+      !window.confirm(
+        'Delete ALL systems, reports, alerts and rating history? Users are kept. This cannot be undone.',
+      )
+    )
+      return;
+    setPurging(true);
+    setPurgeMsg(null);
+    try {
+      const res = await purgeData();
+      const d = res.deleted;
+      setPurgeMsg(
+        `Cleared ${d.systems} systems, ${d.reports} reports, ${d.alerts} alerts.`,
+      );
+      await refresh();
+    } catch (err) {
+      setPurgeMsg(errorMessage(err, 'Failed to clear data'));
+    } finally {
+      setPurging(false);
+    }
+  };
 
   const [sid, setSid] = useState('');
   const [description, setDescription] = useState('');
@@ -181,6 +208,24 @@ export function Systems() {
               </form>
             )}
           </Card>
+
+          {isAdmin && (
+            <Card title="Danger zone" className="mt-6 border-red-200">
+              <p className="text-sm text-gray-600">
+                Remove all demo / imported data (systems, reports, alerts, ratings).
+                User accounts are preserved.
+              </p>
+              <button
+                type="button"
+                className="btn-danger mt-3 w-full"
+                onClick={onPurge}
+                disabled={purging}
+              >
+                {purging ? 'Clearing…' : 'Clear all data'}
+              </button>
+              {purgeMsg && <p className="mt-2 text-sm text-gray-700">{purgeMsg}</p>}
+            </Card>
+          )}
         </div>
       </div>
     </div>

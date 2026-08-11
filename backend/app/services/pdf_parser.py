@@ -297,7 +297,33 @@ def parse_ewa_text(text: str) -> ParsedReport:
     return result
 
 
+def _apply_filename_metadata(parsed: "ParsedReport", filename: str) -> None:
+    """Fill missing sid / date / overall rating from the EWA filename.
+
+    SAP encodes these reliably in the filename
+    (``SID_installation_customer_YYYY-MM-DD_<R|Y|G>_EWA.DOC``), which is more
+    dependable than scraping a cover page, so it is used whenever the parsed
+    document did not yield the value.
+    """
+    from app.services.wordml_parser import parse_filename_metadata
+
+    meta = parse_filename_metadata(filename)
+    if not parsed.sid and meta["sid"]:
+        parsed.sid = meta["sid"]
+    if not parsed.report_date and meta["report_date"]:
+        parsed.report_date = meta["report_date"]
+    if not parsed.overall_rating and meta["overall_rating"]:
+        parsed.overall_rating = meta["overall_rating"]
+
+
 def parse_ewa_document(data: bytes, filename: str = "") -> ParsedReport:
-    """Parse an EWA document from raw bytes (PDF/HTML/text)."""
-    text = extract_text(data, filename)
-    return parse_ewa_text(text)
+    """Parse an EWA document from raw bytes (WordML .DOC / PDF / HTML / text)."""
+    from app.services.wordml_parser import is_wordml, parse_wordml
+
+    if is_wordml(data):
+        parsed = parse_wordml(data)
+    else:
+        text = extract_text(data, filename)
+        parsed = parse_ewa_text(text)
+    _apply_filename_metadata(parsed, filename)
+    return parsed

@@ -208,6 +208,16 @@ export async function search(q: string): Promise<SearchResult> {
   return data;
 }
 
+// ---- Admin ----
+export interface PurgeResult {
+  deleted: { alerts: number; ratings: number; reports: number; systems: number };
+}
+
+export async function purgeData(): Promise<PurgeResult> {
+  const { data } = await api.post<PurgeResult>('/admin/purge');
+  return data;
+}
+
 // ---- Connector ----
 export async function fetchConnectorStatus(): Promise<ConnectorStatus> {
   const { data } = await api.get<ConnectorStatus>('/connector/status');

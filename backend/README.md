@@ -25,6 +25,16 @@ alembic upgrade head                       # apply migrations
 alembic revision --autogenerate -m "msg"   # create a new migration
 ```
 
+## Bulk-ingest real EWA files
+
+Load SAP EWA `.DOC` / PDF files straight from a folder (SID, date and overall
+rating are read from the SAP filename when the document does not supply them):
+
+```bash
+python -m app.ingest "C:/Users/me/Downloads/*_EWA.DOC"
+python -m app.ingest ./reports/VSP_*.DOC --replace
+```
+
 ## Tests
 
 ```bash

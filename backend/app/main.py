@@ -12,6 +12,7 @@ from app.core.database import Base, SessionLocal, engine
 from app.core.security import hash_password
 from app.models.models import User, UserRole
 from app.api.routers import (
+    admin,
     alerts,
     auth,
     connector,
@@ -72,6 +73,7 @@ app.include_router(alerts.router, prefix=_prefix)
 app.include_router(trends.router, prefix=_prefix)
 app.include_router(search.router, prefix=_prefix)
 app.include_router(connector.router, prefix=_prefix)
+app.include_router(admin.router, prefix=_prefix)
 
 
 @app.get("/health", tags=["meta"])
