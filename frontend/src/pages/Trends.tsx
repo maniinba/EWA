@@ -47,10 +47,10 @@ export function Trends() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const numericId = systemId ? Number(systemId) : null;
+  const activeId = systemId ?? null;
 
   useEffect(() => {
-    if (numericId == null) {
+    if (activeId == null) {
       setTrends(null);
       setChanged(null);
       return;
@@ -61,8 +61,8 @@ export function Trends() {
     (async () => {
       try {
         const [t, c] = await Promise.all([
-          fetchTrends(numericId),
-          fetchWhatChanged(numericId).catch(() => null),
+          fetchTrends(activeId),
+          fetchWhatChanged(activeId).catch(() => null),
         ]);
         if (!active) return;
         setTrends(t);
@@ -76,7 +76,7 @@ export function Trends() {
     return () => {
       active = false;
     };
-  }, [numericId]);
+  }, [activeId]);
 
   // Merge chapter trend scores into a single dataset keyed by report_date.
   const chapterChartData = useMemo(() => {
@@ -111,7 +111,7 @@ export function Trends() {
           <select
             id="trend-system"
             className="input"
-            value={numericId ?? ''}
+            value={activeId ?? ''}
             onChange={(e) => {
               const v = e.target.value;
               navigate(v ? `/trends/${v}` : '/trends');
@@ -127,7 +127,7 @@ export function Trends() {
         </div>
       </div>
 
-      {numericId == null && (
+      {activeId == null && (
         <Card>
           <p className="py-8 text-center text-sm text-gray-400">
             Select a system to view its trends.

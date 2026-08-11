@@ -17,7 +17,7 @@ export function SearchResults() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAlert, setSelectedAlert] = useState<number | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
 
   useEffect(() => {
     if (!q) {

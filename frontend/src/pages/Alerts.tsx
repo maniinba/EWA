@@ -26,13 +26,13 @@ export function Alerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAlert, setSelectedAlert] = useState<number | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const filters: AlertFilters = { limit: 200 };
-    if (systemId) filters.system_id = Number(systemId);
+    if (systemId) filters.system_id = systemId;
     if (severity) filters.severity = severity as Severity;
     if (status) filters.status = status as AlertStatus;
     if (chapter) filters.chapter = chapter;

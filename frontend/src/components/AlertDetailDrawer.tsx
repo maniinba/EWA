@@ -13,10 +13,10 @@ import { ErrorMessage } from './ErrorMessage';
 import { SeverityPill, StatusPill, STATUS_LABEL } from './pills';
 
 interface Props {
-  alertId: number | null;
+  alertId: string | null;
   onClose: () => void;
   onUpdated?: (alert: Alert) => void;
-  onSelectAlert?: (id: number) => void;
+  onSelectAlert?: (id: string) => void;
 }
 
 const STATUS_OPTIONS: AlertStatus[] = ['open', 'in_progress', 'resolved', 'deferred'];
@@ -41,7 +41,7 @@ export function AlertDetailDrawer({ alertId, onClose, onUpdated, onSelectAlert }
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const load = useCallback(async (id: number) => {
+  const load = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     setSaved(false);

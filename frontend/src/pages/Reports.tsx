@@ -21,7 +21,7 @@ export function Reports() {
   const { systems, refresh: refreshSystems } = useSystems();
   const canUpload = hasRole('operator');
   const canDelete = hasRole('admin');
-  const sidById = (id: number) => systems.find((s) => s.id === id)?.sid ?? `#${id}`;
+  const sidById = (id: string) => systems.find((s) => s.id === id)?.sid ?? `#${id}`;
 
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -125,7 +125,7 @@ export function Reports() {
     }
   };
 
-  const onDelete = async (id: number) => {
+  const onDelete = async (id: string) => {
     if (!window.confirm('Delete this report and its alerts? This cannot be undone.')) return;
     try {
       await deleteReport(id);

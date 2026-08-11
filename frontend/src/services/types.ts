@@ -4,7 +4,7 @@ export type AlertStatus = 'open' | 'in_progress' | 'resolved' | 'deferred';
 export type UserRole = 'admin' | 'operator' | 'viewer';
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   full_name: string | null;
   role: UserRole;
@@ -41,7 +41,7 @@ export interface DashboardSummary {
 }
 
 export interface SystemItem {
-  id: number;
+  id: string;
   sid: string;
   description: string | null;
   system_type: string | null;
@@ -62,9 +62,9 @@ export interface CreateSystemPayload {
 }
 
 export interface Alert {
-  id: number;
-  report_id: number;
-  system_id: number;
+  id: string;
+  report_id: string;
+  system_id: string;
   chapter: string;
   severity: Severity;
   title: string;
@@ -81,7 +81,7 @@ export interface Alert {
 }
 
 export interface AlertFilters {
-  system_id?: number;
+  system_id?: string;
   severity?: Severity;
   status?: AlertStatus;
   chapter?: string;
@@ -96,8 +96,8 @@ export interface UpdateAlertStatusPayload {
 }
 
 export interface Report {
-  id: number;
-  system_id: number;
+  id: string;
+  system_id: string;
   report_date: string;
   file_name: string;
   file_size: number;
@@ -159,7 +159,7 @@ export interface ChapterTrend {
 }
 
 export interface Trends {
-  system_id: number;
+  system_id: string;
   system_sid: string;
   alert_trend: AlertTrendPoint[];
   chapter_trends: ChapterTrend[];
@@ -173,7 +173,7 @@ export interface RatingChange {
 }
 
 export interface WhatChanged {
-  system_id: number;
+  system_id: string;
   from_date: string | null;
   to_date: string | null;
   new_alerts: string[];

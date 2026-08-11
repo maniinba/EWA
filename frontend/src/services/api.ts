@@ -117,7 +117,7 @@ export async function createSystem(payload: CreateSystemPayload): Promise<System
 // ---- Alerts ----
 export async function fetchAlerts(filters: AlertFilters = {}): Promise<Alert[]> {
   const params: Record<string, string | number> = {};
-  if (filters.system_id != null) params.system_id = filters.system_id;
+  if (filters.system_id) params.system_id = filters.system_id;
   if (filters.severity) params.severity = filters.severity;
   if (filters.status) params.status = filters.status;
   if (filters.chapter) params.chapter = filters.chapter;
@@ -128,18 +128,18 @@ export async function fetchAlerts(filters: AlertFilters = {}): Promise<Alert[]> 
   return data;
 }
 
-export async function fetchAlert(id: number): Promise<Alert> {
+export async function fetchAlert(id: string): Promise<Alert> {
   const { data } = await api.get<Alert>(`/alerts/${id}`);
   return data;
 }
 
-export async function fetchSimilarAlerts(id: number): Promise<Alert[]> {
+export async function fetchSimilarAlerts(id: string): Promise<Alert[]> {
   const { data } = await api.get<Alert[]>(`/alerts/${id}/similar`);
   return data;
 }
 
 export async function updateAlertStatus(
-  id: number,
+  id: string,
   payload: UpdateAlertStatusPayload,
 ): Promise<Alert> {
   const { data } = await api.patch<Alert>(`/alerts/${id}/status`, payload);
@@ -147,19 +147,19 @@ export async function updateAlertStatus(
 }
 
 // ---- Reports ----
-export async function fetchReports(systemId?: number): Promise<Report[]> {
-  const params: Record<string, number> = {};
+export async function fetchReports(systemId?: string): Promise<Report[]> {
+  const params: Record<string, string> = {};
   if (systemId != null) params.system_id = systemId;
   const { data } = await api.get<Report[]>('/reports', { params });
   return data;
 }
 
-export async function fetchReport(id: number): Promise<ReportDetail> {
+export async function fetchReport(id: string): Promise<ReportDetail> {
   const { data } = await api.get<ReportDetail>(`/reports/${id}`);
   return data;
 }
 
-export async function deleteReport(id: number): Promise<void> {
+export async function deleteReport(id: string): Promise<void> {
   await api.delete(`/reports/${id}`);
 }
 
@@ -192,12 +192,12 @@ export async function uploadReport(
 }
 
 // ---- Trends ----
-export async function fetchTrends(systemId: number): Promise<Trends> {
+export async function fetchTrends(systemId: string): Promise<Trends> {
   const { data } = await api.get<Trends>(`/trends/${systemId}`);
   return data;
 }
 
-export async function fetchWhatChanged(systemId: number): Promise<WhatChanged> {
+export async function fetchWhatChanged(systemId: string): Promise<WhatChanged> {
   const { data } = await api.get<WhatChanged>(`/trends/${systemId}/what-changed`);
   return data;
 }

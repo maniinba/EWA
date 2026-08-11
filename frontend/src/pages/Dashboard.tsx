@@ -36,7 +36,7 @@ export function Dashboard() {
   const [criticalAlerts, setCriticalAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAlert, setSelectedAlert] = useState<number | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
